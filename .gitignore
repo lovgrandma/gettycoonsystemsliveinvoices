@@ -1,0 +1,6 @@
+# Ignore node_modules
+**/node_modules
+s3credentials.js
+
+# Ignore any zip files
+*.zip
