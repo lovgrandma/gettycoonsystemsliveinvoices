@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "aws-sdk": "^2.1273.0",
     "mongoose": "^6.2.2",
     "uuid": "^9.0.0"
   }

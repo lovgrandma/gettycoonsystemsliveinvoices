@@ -28,6 +28,18 @@ const InvoiceSchema = new mongoose.Schema({
     history: {
         type: Array,
         required: false
+    },
+    emailFrom: {
+        type: String,
+        required: false
+    },
+    emailTo: {
+        type: String,
+        required: false
+    },
+    pdfUrl: {
+        type: String,
+        required: false
     }
 });
 

@@ -1,6 +1,7 @@
 import s3Cred from './s3credentials.js'
 import mongoose from 'mongoose'
 import Invoice from './models/Invoice.js'
+import { sendEmail } from './mail/Email.js'
 export const handler = async(event) => {
     let returnData = `Lambda Function Invoked!`
     let record
@@ -35,8 +36,15 @@ export const handler = async(event) => {
         let i = await Invoice.find({ status: status }).lean();
         return i
     }
-    const updateInvoice = async (id, status = 'sent') => {
-        let i = await Invoice.findOneAndUpdate({ _id: id }, { status: status}).lean()
+    const updateInvoice = async (id, status = 'sent', pdf) => {
+        let updateObject = {
+            status: status
+        }
+        if (pdf) {
+            updateObject.pdfUrl = pdf
+        }
+        console.log(updateObject)
+        let i = await Invoice.findOneAndUpdate({ _id: id }, updateObject).lean()
         return i
     }
     let invoices
@@ -61,9 +69,23 @@ export const handler = async(event) => {
         } else if (event.action.match(/UPDATE:pending/)) {
             if (event.data) {
                 const promises = event.data.map(d => new Promise(async (resolve, reject) => {
-                    console.log(d.key.match(/(?<=Invoice_)([a-zA-Z0-9].*).pdf/))
-                    if (d && d.key && d.key.match(/(?<=Invoice_)([a-zA-Z0-9].*).pdf/) && d.key.match(/(?<=Invoice_)([a-zA-Z0-9].*).pdf/)[1]) {
-                        updateInvoice(d.key.match(/(?<=Invoice_)([a-zA-Z0-9].*).pdf/)[1])
+                    try {
+                        if (d && d.data && d.data.key && d.data.key.match(/(?<=Invoice_)([a-zA-Z0-9].*).pdf/) && d.data.key.match(/(?<=Invoice_)([a-zA-Z0-9].*).pdf/)[1]) {
+                            const updated = await updateInvoice(d.data.key.match(/(?<=Invoice_)([a-zA-Z0-9].*).pdf/)[1], 'sent', d.pdf)
+                            console.log(updated, d.data)
+                            // let i = await Invoice.findOne({ _id: invoice }).lean();
+                            // const emailSent = await sendEmail(d.data.key.match(/(?<=Invoice_)([a-zA-Z0-9].*).pdf/)[1], i)
+                            // console.log(emailSent)
+                            resolve({
+                                updated: updated
+                            })
+                        }
+                    } catch (err) {
+                        console.log(err)
+                        resolve({
+                            updated: null,
+                            emailStatus: null
+                        })
                     }
                 }))
                 Promise.all(promises)
